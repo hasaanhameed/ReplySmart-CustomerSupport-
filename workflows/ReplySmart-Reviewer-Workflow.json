@@ -1,0 +1,973 @@
+{
+  "name": "ReplySmart-Reviewer-Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "customersupport",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -832,
+        192
+      ],
+      "id": "b6a7ce97-8b62-4002-a869-9b631b0f27b0",
+      "name": "Webhook",
+      "webhookId": "7ea40610-bcb6-4119-87a3-beacc9a27190"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc",
+          "mode": "list",
+          "cachedResultName": "Customer Support DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Not Responded"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -96,
+        -32
+      ],
+      "id": "29907efc-8b82-4fda-8ec4-bb3d818320a3",
+      "name": "Get Record",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ryhJuqjjYvBhFViN",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseKey": ""
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        480,
+        -32
+      ],
+      "id": "dbc5a902-f281-41c2-afab-48ce87d6ceb1",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "30c0fcbc-2c47-4d97-9e77-38ad5412e18e",
+              "name": "from",
+              "value": "={{ $json.From }}",
+              "type": "string"
+            },
+            {
+              "id": "1afaab7f-1759-4083-b738-9dcc12bc8303",
+              "name": "label",
+              "value": "={{ $json.Label }}",
+              "type": "string"
+            },
+            {
+              "id": "57d0e2cf-cb20-49a9-8c09-af924ed630f7",
+              "name": "emailBody",
+              "value": "={{ $json['Email Body'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c050e6b8-344e-47da-86b5-c98740440674",
+              "name": "agentResponse",
+              "value": "={{ $json['Agent Response'] }}",
+              "type": "string"
+            },
+            {
+              "id": "661888d9-2f04-48f2-ae25-f77cec65753e",
+              "name": "emailID",
+              "value": "={{ $json.EmailID }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        -32
+      ],
+      "id": "125a3216-4d2c-4599-a6d9-fb615b72153c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "fetch",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c619de49-2766-468d-a0a3-35ff646fdd63"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "FETCH"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "14bb0c92-3950-4fdf-ac6a-1395cceceeda",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "send",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "SEND"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9de2d843-bbe8-470d-8f6f-68c7f55cd1ae",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "revise",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "REVISE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -464,
+        176
+      ],
+      "id": "bed2cd88-d312-4c3b-9e98-d62625e579d1",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $json.body.emailID }}",
+        "emailType": "text",
+        "message": "={{ $json.body.agentResponse }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -96,
+        192
+      ],
+      "id": "c8b8147e-7d57-4d16-9c80-e9e71fb65273",
+      "name": "Reply to Email",
+      "webhookId": "d3ecce42-6cbf-4b3d-a91f-2eed4d1722a1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "EY6aypa3XHrppfDJ",
+          "name": "Gmail Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc",
+          "mode": "list",
+          "cachedResultName": "Customer Support DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "EmailID": "={{ $('Get Record').item.json.EmailID }}",
+            "From": "={{ $('Edit Fields').item.json.from }}",
+            "Email Body": "={{ $('Edit Fields').item.json.emailBody }}",
+            "Label": "={{ $('Edit Fields').item.json.label }}",
+            "Agent Response": "={{ $('Edit Fields').item.json.agentResponse }}",
+            "Status": "Under Review"
+          },
+          "matchingColumns": [
+            "EmailID"
+          ],
+          "schema": [
+            {
+              "id": "EmailID",
+              "displayName": "EmailID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Body",
+              "displayName": "Email Body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Label",
+              "displayName": "Label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent Response",
+              "displayName": "Agent Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        688,
+        -32
+      ],
+      "id": "fbf549bc-3347-42a3-a342-398525b72cb0",
+      "name": "Update Status -> Under Review",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ryhJuqjjYvBhFViN",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc",
+          "mode": "list",
+          "cachedResultName": "Customer Support DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "EmailID": "={{ $('Webhook').item.json.body.emailID }}",
+            "Status": "Responded"
+          },
+          "matchingColumns": [
+            "EmailID"
+          ],
+          "schema": [
+            {
+              "id": "EmailID",
+              "displayName": "EmailID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email Body",
+              "displayName": "Email Body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Label",
+              "displayName": "Label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Agent Response",
+              "displayName": "Agent Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        240,
+        192
+      ],
+      "id": "1ea68500-a40e-41d3-92dc-5973c85c5040",
+      "name": "Update Status -> Responded",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ryhJuqjjYvBhFViN",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -144,
+        656
+      ],
+      "id": "4ecad632-8584-4590-9b44-27e6d29965f9",
+      "name": "gpt-4.1-mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "md6VblUtxt7UJ9ui",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "This vector database stores the company's FAQ documents and policy guidelines under the \"FAQ\" namespace. ",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "customersupport",
+          "mode": "list",
+          "cachedResultName": "customersupport"
+        },
+        "options": {
+          "pineconeNamespace": "FAQ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        64,
+        672
+      ],
+      "id": "aca3787b-193c-40d6-ac25-17407d381f47",
+      "name": "FAQ Vector Database",
+      "credentials": {
+        "pineconeApi": {
+          "id": "MTtlkhaPLn8zTXom",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        16,
+        816
+      ],
+      "id": "b00a7ff7-6720-47a1-b8f7-f7eb2cfac72c",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "md6VblUtxt7UJ9ui",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Email:  {{ $json.body.emailBody }}\nPrevious Agent Response: {{ $json.body.agentResponse }}\nRequired Revision: {{ $json.body.revisions }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=#OVERVIEW: \n- You are an email revision/refinement assistant for customer support of \"Company ABC\".\n\n#TOOLS: \n- \"FAQ Vector Database\": It is a pinecone vector database that stores the FAQ instructions. \n\n#INSTRUCTIONS: \n- You will get an email body along with the previous agent response and the required revision.\n- Your task is to perform the required revision(s) on the previous agent response and update it.\n- If relevant to the revision, you may query the FAQ Vector Database to enrich the response with accurate company policies or instructions. Do not invent information not found in the FAQ database.\n- Do not change the basic output structure, like the signing off part.\n\n# OUTPUT FIELDS:\n- Just return the refined Agent Response."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -112,
+        432
+      ],
+      "id": "6470ddb2-3a99-42de-b1a7-6b5f703cebe7",
+      "name": "Refinement Agent"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc",
+          "mode": "list",
+          "cachedResultName": "Customer Support DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "EmailID": "={{ $('Webhook').item.json.body.emailID }}",
+            "Agent Response": "={{ $json.output }}"
+          },
+          "matchingColumns": [
+            "EmailID"
+          ],
+          "schema": [
+            {
+              "id": "EmailID",
+              "displayName": "EmailID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email Body",
+              "displayName": "Email Body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Label",
+              "displayName": "Label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Agent Response",
+              "displayName": "Agent Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        240,
+        432
+      ],
+      "id": "5c9c5a00-4001-4e3a-822b-7b54dfb4c5ac",
+      "name": "Update Agent Response",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ryhJuqjjYvBhFViN",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        704,
+        432
+      ],
+      "id": "da0ee1c1-96af-4214-a876-4ed56e4d7a5a",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "53f477b2-b5d0-4374-8668-17f31fc5930d",
+              "name": "agentResponse",
+              "value": "={{ $json['Agent Response'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        432
+      ],
+      "id": "26ee0b00-f1d1-4855-8977-2e6d40748c61",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "content": "## GET USER ACTION\nThere are three actions that can be taken: \n1) Fetch\n2) Send\n3) Revise\n",
+        "height": 304,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        64
+      ],
+      "id": "26d62b6a-bbe0-4cb5-898a-ad7037d01d8e",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## ROUTING\n- ### Action = Fetch\nFetches the last email from the database that has status = \"Not Responded\". \n\n- ### Action = Send\nAfter reviewed by the team(Human in the loop), if they think the response is good enough, they can send it straight away. \n\n- ### Action = Revise\nAfter reviewed by the team(Human in the loop), if they think the response is not sufficient, they can provide a prompt to the refinement agent that will improve the response.",
+        "height": 576,
+        "width": 336,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        -208
+      ],
+      "id": "26b08c02-237f-4860-9b98-89527d1703c0",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## FETCH RECORD\n- Retrieves the latest unresolved email from the database.\n- Marks the email status as \"Under Review\".\n- Sends details back to the dashboard for review.\n",
+        "height": 336,
+        "width": 1120,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        -208
+      ],
+      "id": "098c71cb-37d0-456a-9267-2ba1ad6fbf54",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## SEND RESPONSE\n- Sends the agent’s drafted response to the customer.\n- Updates the database status to \"Responded\".\n",
+        "height": 224,
+        "width": 496,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        448,
+        144
+      ],
+      "id": "2bfcb10b-69af-4ada-a402-a2d2ec567375",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 224,
+        "width": 624,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        144
+      ],
+      "id": "c73ded0c-ce54-410d-a468-4a6f3f67ed41",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 544,
+        "width": 1120,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        384
+      ],
+      "id": "e057f40a-a408-4c01-b5ff-76bf42f9b392",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## REVISE RESPONSE (RAG)\n- Uses GPT-4.1-mini + FAQ Vector Database (RAG).\n- Refines the drafted response with additional context.\n- Updates the improved response in the database.\n- Keeps status as \"Under Review\" until finalized.\n",
+        "height": 224,
+        "width": 480,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        320,
+        592
+      ],
+      "id": "61e7318d-9737-4b85-8174-334286deaa64",
+      "name": "Sticky Note6"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Record": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Update Status -> Under Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply to Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Refinement Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to Email": {
+      "main": [
+        [
+          {
+            "node": "Update Status -> Responded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status -> Under Review": {
+      "main": [
+        []
+      ]
+    },
+    "gpt-4.1-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Refinement Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAQ Vector Database": {
+      "ai_tool": [
+        [
+          {
+            "node": "Refinement Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "FAQ Vector Database",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refinement Agent": {
+      "main": [
+        [
+          {
+            "node": "Update Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Agent Response": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook1": {
+      "main": [
+        []
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fd052222-a9aa-40e4-a652-4049354fe098",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d897bfcf21aea7fa073d866110222447fc2d38b239020fdaea15531c46d045cd"
+  },
+  "id": "62Xm4eVurMf8768a",
+  "tags": []
+}

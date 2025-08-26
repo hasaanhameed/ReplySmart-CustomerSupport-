@@ -1,0 +1,570 @@
+{
+  "name": "ReplySmart-ResponsePipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -336,
+        -16
+      ],
+      "id": "66f2b240-00b7-4604-acf0-af208299369a",
+      "name": "New Email Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "EY6aypa3XHrppfDJ",
+          "name": "Gmail Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=From: {{ $json.from.value[0].address }}\nEmail: {{ $json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=#ROLE\n- You are an email classifier for \"Company ABC\".\n----------------------------------------------\n#LABEL MAPPING\n1) BILLING → Label_4559439259642331275\n2) TECHNICAL SUPPORT → Label_5183897400449316043\n3) GENERAL INQUIRY → Label_1510034353159083896\n4) Spam Email → Label_2791828579866538891\n\n\n#TASK\n- Read and analyze the message (From, Subject, Body) and choose exactly one label from: \"BILLING\", \"TECHNICAL SUPPORT\", \"GENERAL INQUIRY\", \"Spam Email\".\n\n- Use “Spam Email” for unsolicited promos/newsletters/welcome blasts/phishing/irrelevant bulk mail.\n\n- Otherwise pick the best fitting label.\n\n#OUTPUT\n- Output two fields:\n1) LabelID(Give full Label ID, not only the number)\n2) labelName",
+          "maxIterations": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        16,
+        -16
+      ],
+      "id": "2817b200-8271-4603-bab9-78eaac124712",
+      "name": "Email Classifier Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -48,
+        176
+      ],
+      "id": "627b1158-f402-40cd-83b0-5a8240741d26",
+      "name": "gpt-4.1-mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "md6VblUtxt7UJ9ui",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=EmailID: {{ $('New Email Trigger').item.json.id }}\nFrom: {{ $('New Email Trigger').item.json.from.value[0].address }}\nName: {{ $('New Email Trigger').item.json.from.value[0].name }}\nemailBody: {{ $('New Email Trigger').item.json.text }}\nlabelName: {{ $('Email Classifier Agent').item.json.output.labelName }}\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=#OVERVIEW:\n- You are a helpful assistant that write emails for customer support of \"Company ABC\".\n\n#TOOLS: \n- \"FAQ Vector Database\": It is a pinecone vector database that stores the FAQ instructions. \n\n#INSTRUCTIONS: \n- You will get an email labeled as either \"BILLING\", \"TECHNICAL SUPPORT\", \"GENERAL INQUIRY\", or \"Spam Email\".\n- In case the email is labeled as \"Spam Email\", you DO NOT respond to the email \n- For other labels, your job is to look into the \"FAQ\" namespace and from the relevant section, write an email for the user, make sure to answer all their queries, always sign off with \"Customer Support from Company ABC\".\n- Always set the \"Status\" to \"Not Responded\".\n\n# OUTPUT FIELDS:\n- **emailID** → The Id assigned to the email.\n- **labelName** → The label assigned to the email (e.g., \"BILLING\", \"TECHNICAL SUPPORT\", \"GENERAL INQUIRY\", or \"Spam Email\").  \n- **from** → The sender’s email address.  \n- **emailBody** → The full original text of the email received from the user.  \n- **agentResponse** → The drafted response email (empty string if label is \"Spam Email\").  \n- **status** → Always set to `\"Not Responded\".\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        -16
+      ],
+      "id": "f047dc7f-e453-4287-aed5-d18aced49fc4",
+      "name": "Customer Support Agent"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "This vector database stores the company's FAQ documents and policy guidelines under the \"FAQ\" namespace. ",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "customersupport",
+          "mode": "list",
+          "cachedResultName": "customersupport"
+        },
+        "options": {
+          "pineconeNamespace": "FAQ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        848,
+        224
+      ],
+      "id": "1e13e0d0-a4ca-4ffc-93d5-c2614cd118b5",
+      "name": "FAQ Vector Database",
+      "credentials": {
+        "pineconeApi": {
+          "id": "MTtlkhaPLn8zTXom",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        768,
+        384
+      ],
+      "id": "b93ff17f-ce93-4333-b01e-94934b8df617",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "md6VblUtxt7UJ9ui",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('New Email Trigger').item.json.id }}",
+        "labelIds": "={{ $json.output.labelId }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        -16
+      ],
+      "id": "5a0dfe26-09d2-4d71-9a66-f7805aabb040",
+      "name": "Add Label",
+      "webhookId": "66ec1897-7108-4352-90cc-185f4c4f5b95",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "EY6aypa3XHrppfDJ",
+          "name": "Gmail Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"labelId\": \"Label_1510034353159083896\",\n  \"labelName\": \"GENERAL INQUIRY\"\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        176
+      ],
+      "id": "6c33d309-3034-4cca-9cb3-423baa5a3a76",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n  \"title\": \"Customer Support Agent Output\",\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"emailID\": { \"type\": \"string\" },\n    \"labelName\": { \"type\": \"string\", \"enum\": [\"BILLING\", \"TECHNICAL SUPPORT\", \"GENERAL INQUIRY\", \"Spam Email\"] },\n    \"from\": { \"type\": \"string\", \"format\": \"email\" },\n    \"emailBody\": { \"type\": \"string\" },\n    \"agentResponse\": { \"type\": \"string\" },\n    \"status\": { \"type\": \"string\", \"enum\": [\"Not Responded\"] }\n  },\n  \"required\": [\"emailID\", \"labelName\", \"from\", \"emailBody\", \"agentResponse\", \"status\"],\n  \"allOf\": [\n    {\n      \"if\": {\n        \"properties\": { \"labelName\": { \"const\": \"Spam Email\" } },\n        \"required\": [\"labelName\"]\n      },\n      \"then\": {\n        \"properties\": { \"agentResponse\": { \"maxLength\": 0 } }\n      }\n    }\n  ]\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1184,
+        224
+      ],
+      "id": "3d5035c4-ddd5-4c11-a9c8-a038b09eaa0e",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1648,
+        -176
+      ],
+      "id": "2536b36b-7750-417b-bdc1-6525fe70371d",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc",
+          "mode": "list",
+          "cachedResultName": "Customer Support DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UQp--84jZq6E2b2M0AoBZW9bnXI6i3l2IPWs9wsMzCc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Label": "={{ $json.output.labelName }}",
+            "Status": "={{ $json.output.status }}",
+            "Agent Response": "={{ $json.output.agentResponse }}",
+            "Email Body": "={{ $json.output.emailBody }}",
+            "From": "={{ $json.output.from }}",
+            "EmailID": "={{ $json.output.emailID }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "EmailID",
+              "displayName": "EmailID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Body",
+              "displayName": "Email Body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Label",
+              "displayName": "Label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent Response",
+              "displayName": "Agent Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1648,
+        144
+      ],
+      "id": "9a6b1caa-f7cc-4e87-a055-612051522b1f",
+      "name": "Add Record",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ryhJuqjjYvBhFViN",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "941ca5f6-934c-458c-ad79-9d98b3ad85dd",
+              "leftValue": "={{ \n  ($json.output?.labelName ?? $json.labelName ?? '')\n    .toString()\n    .trim()\n    .toLowerCase()\n}}\n",
+              "rightValue": "spam",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1408,
+        -16
+      ],
+      "id": "54a6057d-752e-49d0-b973-1f41cb0c5b85",
+      "name": "Is Spam?"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        656,
+        224
+      ],
+      "id": "e3a065c5-7216-4c4e-883a-b7b534813ef1",
+      "name": "gpt-4.1-mini2",
+      "credentials": {
+        "openAiApi": {
+          "id": "md6VblUtxt7UJ9ui",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## New Email Detection\n- Polls every minute to check for new emails",
+        "height": 272,
+        "width": 352
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        -96
+      ],
+      "id": "2dd04d9d-7cbb-4e2b-97c0-5a09839d8ca3",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Email Classification\nThe classification agent classifies the email as one of the following: \n- Billing\n- General Inquiry\n- Technical Support \n- Spam Email\nAfter classification, it passes on the id of the selected label.",
+        "height": 608,
+        "width": 672,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        -272
+      ],
+      "id": "a5dce8c8-0b44-4b7a-b63d-39e0fd653869",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Agent Response\nThis agent is responsible for drafting customer support email replies.\n\nUses RAG (Retrieval-Augmented Generation) by combining:\n- Incoming email context\n- Information retrieved from the FAQ Vector Database (Pinecone)\n\n## Workflow:\n\n- Ignores emails labeled as Spam.\n- For labels such as Billing, Technical Support, and General Inquiry, it retrieves relevant FAQ entries.\n- Drafts a complete email response, ensuring all user queries are answered.\n\n## Structured Output \n- emailID, labelName, from, emailBody, agentResponse, and fixed status = \"Not Responded\".",
+        "height": 944,
+        "width": 720,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        624,
+        -432
+      ],
+      "id": "d7cbadda-66ea-404d-8240-8b79daf39578",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Add to Database\n- Emails labeled as “Spam Email” are ignored and not stored.\n\nFor all other labels (Billing, Technical Support, General Inquiry), the workflow appends the email record to the Google Sheets database.\n\nEach entry includes:\n- EmailID\n- From (sender’s email)\n- Email Body\n- Label (classification result)\n- Agent Response \n- Status (default: “Not Responded”)",
+        "height": 944,
+        "width": 512,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        -432
+      ],
+      "id": "265e2509-34a4-475c-a131-365099b5f5b6",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Email Classifier Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gpt-4.1-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Classifier Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Classifier Agent": {
+      "main": [
+        [
+          {
+            "node": "Add Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAQ Vector Database": {
+      "ai_tool": [
+        [
+          {
+            "node": "Customer Support Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "FAQ Vector Database",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Label": {
+      "main": [
+        [
+          {
+            "node": "Customer Support Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Email Classifier Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Support Agent": {
+      "main": [
+        [
+          {
+            "node": "Is Spam?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Customer Support Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Spam?": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gpt-4.1-mini2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Customer Support Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9a81ece8-735d-469b-bbb4-216161426ba1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d897bfcf21aea7fa073d866110222447fc2d38b239020fdaea15531c46d045cd"
+  },
+  "id": "vFQxu0E8D2yjm6ay",
+  "tags": []
+}
